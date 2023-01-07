@@ -1,5 +1,11 @@
 # Fine Tune GPT3 for Code
 
+Dependencies:
+* [GPT-3 from OpenAI](https://github.com/openai/openai-node)
+* [yargs for command-line arguments](https://github.com/yargs/yargs)
+* [TypeScript for Compiler API](https://github.com/microsoft/TypeScript/wiki/Using-the-Compiler-API)
+* [dotenv for loading environment variables](https://github.com/motdotla/dotenv)
+
 ## Dataset
 The dataset is in [`./dataset.csv`](./dataset.csv).
 
