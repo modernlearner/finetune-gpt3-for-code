@@ -14,6 +14,9 @@ To produce more completions for the dataset, you can use the parser which will p
 ```shell
 node index.js parse /path/to/typescript/file.ts
 node index.js parse /path/to/javascript/file.js
+
+# Parsing the source code of finetune-gpt3-for-code
+node index.js parse ./index.js
 ```
 
 It will produce the following output that can be used to extend the dataset:

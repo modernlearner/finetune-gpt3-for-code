@@ -2,6 +2,7 @@ require("dotenv").config();
 const fs = require("fs");
 const { parse: csvParseSync} = require("csv-parse/sync");
 const { Configuration, OpenAIApi } = require("openai");
+const typescript = require("typescript");
 const yargs = require("yargs/yargs");
 const { hideBin } = require("yargs/helpers");
 
@@ -53,6 +54,38 @@ async function listFineTunes() {
   }
 }
 
+function parseSourcecode(sourceCodeFilePath) {
+  const program = typescript.createProgram([sourceCodeFilePath], { allowJs: true});
+  const printer = typescript.createPrinter({ newLine: typescript.NewLineKind.LineFeed });
+  const sourceFile = program.getSourceFile(sourceCodeFilePath);
+  parseNode(sourceFile);
+  function parseNode(node) {
+    const completion = printer.printNode(typescript.EmitHint.Unspecified, node, sourceFile);
+    const prompts = [];
+
+    // console.log(node);
+    if (typescript.isArrowFunction(node)) {
+
+      // console.log(Object.keys(node));
+      const params = node.parameters.map(node => node.name.escapedText).join(", ");
+      if (node.parameters.length === 0) {
+        prompts.push("function");
+        prompts.push("function with no parameters");
+      } else if (node.parameters.length === 1) {
+        prompts.push(`function with ${params} parameter`);
+      } else {
+        prompts.push(`function with ${params} parameters`);
+      }
+    }
+
+    for (const prompt of prompts) {
+      console.log(`"${prompt}","${completion}"\n`);
+    }
+
+    typescript.forEachChild(node, parseNode);
+  }
+}
+
 /**
  * Returns the completion generated from OpenAI GPT-3 using any model given the prompt.
  * @param {string} model The fine tune id or the id of another model
@@ -98,7 +131,7 @@ yargs(hideBin(process.argv))
     "Parses a JavaScript or TypeScript file into a CSV that can be added to the dataset.csv file",
     {},
     (argv) => {
-      argv.sourceCodeFilePath;
+      parseSourcecode(argv.sourceCodeFilePath)
     }
   )
   .parse();
