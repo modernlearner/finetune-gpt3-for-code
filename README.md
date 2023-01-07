@@ -1,6 +1,24 @@
 # Fine Tune GPT3 for Code
 
-The dataset is in [./dataset.csv](./dataset.csv).
+## Dataset
+The dataset is in [`./dataset.csv`](./dataset.csv).
+
+To produce more completions for the dataset, there is a [`./parser.js`](./parser.js) that will parse TypeScript and JavaScript.
+
+It will produce the following output that can be used to extend the dataset:
+
+```
+prompt,completion
+for loop,"for (var i = 0; i < 10; i ++) {"
+for loop,"for (var i = 0; i < 10; i ++) {
+  console.log(i);
+}"
+print i,"console.log(i)"
+function for printHelloWorld with one argument,"function printHelloWorld(name) {"
+function for printHelloWorld with one argument,"function printHelloWorld(name) {
+  console.log(`Hello ${name}`);
+}"
+```
 
 ## Install and Setup
 
