@@ -1,0 +1,465 @@
+﻿prompt,completion
+throw an error in non production environments,"if (process.env.NODE_ENV !== 'production') {
+    throw new Error(`take(patternOrChannel): argument ${patternOrChannel} is not valid channel or a valid pattern`)
+  }"
+"in non prod, check to see if the argument is a fork","if (process.env.NODE_ENV !== 'production') {
+    check(eff, isForkEffect, 'detach(eff): argument must be a fork effect')
+  }"
+non prod check if pattern or channel is undefined,"if (process.env.NODE_ENV !== 'production' && arguments.length) {
+    check(arguments[0], is.notUndef, 'take(patternOrChannel): patternOrChannel is undefined')
+  }"
+"check that channel argument is set and is valid, check that action is defined and is valid","if (process.env.NODE_ENV !== 'production') {
+    if (arguments.length > 1) {
+      check(channel, is.notUndef, 'put(channel, action): argument channel is undefined')
+      check(channel, is.channel, `put(channel, action): argument ${channel} is not a valid channel`)
+      check(action, is.notUndef, 'put(channel, action): argument action is undefined')
+    } else {
+      check(channel, is.notUndef, 'put(action): argument action is undefined')
+    }
+  }"
+"in staging environment, check that argument is a fork effect","if (process.env.NODE_ENV !== 'production') {
+    check(eff, isForkEffect, 'detach(eff): argument must be a fork effect')
+  }"
+"in non prod, with arguments, check that pattern or channel is defined","if (process.env.NODE_ENV !== 'production' && arguments.length) {
+    check(arguments[0], is.notUndef, 'take(patternOrChannel): patternOrChannel is undefined')
+  }"
+"in non prod, with 2 args, channel and action both are valid, with one arg, action is valid","if (process.env.NODE_ENV !== 'production') {
+    if (arguments.length > 1) {
+      check(channel, is.notUndef, 'put(channel, action): argument channel is undefined')
+      check(channel, is.channel, `put(channel, action): argument ${channel} is not a valid channel`)
+      check(action, is.notUndef, 'put(channel, action): argument action is undefined')
+    } else {
+      check(channel, is.notUndef, 'put(action): argument action is undefined')
+    }
+  }"
+"in test environment, check that argument is a fork","if (process.env.NODE_ENV !== 'production') {
+    check(eff, isForkEffect, 'detach(eff): argument must be a fork effect')
+  }"
+"in local development environment, check that argument is a fork effect","if (process.env.NODE_ENV !== 'production') {
+    check(eff, isForkEffect, 'detach(eff): argument must be a fork effect')
+  }"
+"when there's one arg, check that action is defined and valid","if (process.env.NODE_ENV !== 'production') {
+    if (arguments.length > 1) {
+      check(channel, is.notUndef, 'put(channel, action): argument channel is undefined')
+      check(channel, is.channel, `put(channel, action): argument ${channel} is not a valid channel`)
+      check(action, is.notUndef, 'put(channel, action): argument action is undefined')
+    } else {
+      check(channel, is.notUndef, 'put(action): argument action is undefined')
+    }
+  }"
+"when there are two args, check that channel and action arguments are defined and valid, channel is first argument, action is second argument","if (process.env.NODE_ENV !== 'production') {
+    if (arguments.length > 1) {
+      check(channel, is.notUndef, 'put(channel, action): argument channel is undefined')
+      check(channel, is.channel, `put(channel, action): argument ${channel} is not a valid channel`)
+      check(action, is.notUndef, 'put(channel, action): argument action is undefined')
+    } else {
+      check(channel, is.notUndef, 'put(action): argument action is undefined')
+    }
+  }"
+"define function for apply effect, in non prod validate that the function descriptor is apply, return result of make effect","export function apply(context, fn, args = []) {
+  const fnDescriptor = [context, fn]
+
+  if (process.env.NODE_ENV !== 'production') {
+    validateFnDescriptor('apply', fnDescriptor)
+  }
+
+  return makeEffect(effectTypes.CALL, getFnCallDescriptor([context, fn], args))
+}"
+"define function for fork effect, in non prod validate that the function descriptor is fork, check that argument is not an effect, and return result of make effect","export function fork(fnDescriptor, ...args) {
+  if (process.env.NODE_ENV !== 'production') {
+    validateFnDescriptor('fork', fnDescriptor)
+
+    check(fnDescriptor, (arg) => !is.effect(arg), 'fork: argument must not be an effect')
+  }
+  return makeEffect(effectTypes.FORK, getFnCallDescriptor(fnDescriptor, args))
+}"
+"finite state machine iterator function that takes a start state and a name and moves to the next state using a state updater function, returning an iterator","export default function fsmIterator(fsm, startState, name) {
+  let stateUpdater,
+    errorState,
+    effect,
+    nextState = startState
+
+  function next(arg, error) {
+    if (nextState === qEnd) {
+      return done(arg)
+    }
+    if (error && !errorState) {
+      nextState = qEnd
+      throw error
+    } else {
+      stateUpdater && stateUpdater(arg)
+      const currentState = error ? fsm[errorState](error) : fsm[nextState]()
+      ;({ nextState, effect, stateUpdater, errorState } = currentState)
+      return nextState === qEnd ? done(arg) : effect
+    }
+  }
+
+  return makeIterator(next, (error) => next(null, error), name)
+}"
+"if there's an error and we're not already in an error state, go to the end state and throw the error","    if (error && !errorState) {
+      nextState = qEnd
+      throw error
+    }"
+function that returns the name of a pattern or channel,"export function safeName(patternOrChannel) {
+  if (is.channel(patternOrChannel)) {
+    return 'channel'
+  }
+
+  if (is.stringableFunc(patternOrChannel)) {
+    return String(patternOrChannel)
+  }
+
+  if (is.func(patternOrChannel)) {
+    return patternOrChannel.name
+  }
+
+  return String(patternOrChannel)
+}"
+return the name of a pattern or channel,"if (is.func(patternOrChannel)) {
+    return patternOrChannel.name
+  }"
+debounce function for redux saga action,"export default function debounceHelper(delayLength, patternOrChannel, worker, ...args) {
+  let action, raceOutput
+
+  const yTake = { done: false, value: take(patternOrChannel) }
+  const yRace = {
+    done: false,
+    value: race({
+      action: take(patternOrChannel),
+      debounce: delay(delayLength),
+    }),
+  }
+  const yFork = (ac) => ({ done: false, value: fork(worker, ...args, ac) })
+  const yNoop = (value) => ({ done: false, value })
+
+  const setAction = (ac) => (action = ac)
+  const setRaceOutput = (ro) => (raceOutput = ro)
+
+  return fsmIterator(
+    {
+      q1() {
+        return { nextState: 'q2', effect: yTake, stateUpdater: setAction }
+      },
+      q2() {
+        return { nextState: 'q3', effect: yRace, stateUpdater: setRaceOutput }
+      },
+      q3() {
+        return raceOutput.debounce
+          ? { nextState: 'q1', effect: yFork(action) }
+          : { nextState: 'q2', effect: yNoop(raceOutput.action), stateUpdater: setAction }
+      },
+    },
+    'q1',
+    `debounce(${safeName(patternOrChannel)}, ${worker.name})`,
+  )
+}"
+effect for taking a value from a pattern,"const yTake = { done: false, value: take(patternOrChannel) }"
+effect for taking a value from a channel,"const yTake = { done: false, value: take(patternOrChannel) }"
+no op effect,"const yNoop = (value) => ({ done: false, value })"
+noop effect,"const yNoop = (value) => ({ done: false, value })"
+effect that does nothing,"const yNoop = (value) => ({ done: false, value })"
+import deferred,import deferred from '@redux-saga/deferred'
+import deferred,import { arrayOfDeferred } from '@redux-saga/deferred'
+import deferred,"import deferred, { arrayOfDeferred } from '@redux-saga/deferred'"
+create deferred promise,const def = deferred()
+defer promise,const def = deferred()
+defer a set of promises,const defs = arrayOfDeferred(2)
+defer a list of promises,const defs = arrayOfDeferred(2)
+defer an array of promises,const defs = arrayOfDeferred(2)
+defer promises list,const defs = arrayOfDeferred(2)
+run saga through redux store,"const middleware = sagaMiddleware()
+createStore(() => ({}), {}, applyMiddleware(middleware))
+Promise.resolve(1)
+    .then(() => defs[0].reject('error'))
+    .then(() => defs[1].resolve(1))
+
+  function* genFn() {
+    try {
+      actual = yield io.all([defs[0].promise, defs[1].promise])
+    } catch (err) {
+      actual = [err]
+    }
+  }
+
+  const task = middleware.run(genFn)"
+test empty array saga,"test('saga empty array', () => {
+  let actual
+  const middleware = sagaMiddleware()
+  createStore(() => ({}), {}, applyMiddleware(middleware))
+
+  function* genFn() {
+    actual = yield io.all([])
+  }
+
+  const expected = []
+  const task = middleware.run(genFn)
+  return task.toPromise().then(() => {
+    // saga must fulfill empty parallel effects with an empty array
+    expect(actual).toEqual(expected)
+  })
+})"
+redux saga empty array,"function* genFn() {
+    actual = yield io.all([])
+  }"
+expect task to return empty array,"const expected = []
+  const task = middleware.run(genFn)
+  return task.toPromise().then(() => {
+    // saga must fulfill empty parallel effects with an empty array
+    expect(actual).toEqual(expected)
+  })"
+test error handling for parallel effect,"test('saga parallel effect: handling errors', () => {
+  let actual
+  const defs = arrayOfDeferred(2)
+  const middleware = sagaMiddleware()
+  createStore(() => ({}), {}, applyMiddleware(middleware))
+  Promise.resolve(1)
+    .then(() => defs[0].reject('error'))
+    .then(() => defs[1].resolve(1))
+
+  function* genFn() {
+    try {
+      actual = yield io.all([defs[0].promise, defs[1].promise])
+    } catch (err) {
+      actual = [err]
+    }
+  }
+
+  const task = middleware.run(genFn)
+  const expected = ['error']
+  return task.toPromise().then(() => {
+    // saga must catch the first error in parallel effects
+    expect(actual).toEqual(expected)
+  })
+})"
+"monitor saga, create redux saga middleware with redux store","const sagaMonitor = createSagaMonitor(ids, effects, actions)
+  const sagaMiddleware = createSagaMiddleware({ sagaMonitor })
+  const store = createStore(() => ({}), applyMiddleware(sagaMiddleware))"
+add monitoring to redux saga,"const sagaMonitor = createSagaMonitor(ids, effects, actions)
+  const sagaMiddleware = createSagaMiddleware({ sagaMonitor })
+  const store = createStore(() => ({}), applyMiddleware(sagaMiddleware))"
+monitor redux saga,"const sagaMonitor = createSagaMonitor(ids, effects, actions)
+  const sagaMiddleware = createSagaMiddleware({ sagaMonitor })
+  const store = createStore(() => ({}), applyMiddleware(sagaMiddleware))"
+watch for fetch products saga and trigger fetch products api call,"import { takeEvery } from 'redux-saga/effects'
+import Api from './path/to/api'
+
+function* watchFetchProducts() {
+  yield takeEvery('PRODUCTS_REQUESTED', fetchProducts)
+}
+
+function* fetchProducts() {
+  const products = yield Api.fetch('/products')
+  console.log(products)
+}"
+import take every,import { takeEvery } from 'redux-saga/effects'
+saga watch for fetch products,"function* watchFetchProducts() {
+  yield takeEvery('PRODUCTS_REQUESTED', fetchProducts)
+}"
+handle products requested and call fetch products,"yield takeEvery('PRODUCTS_REQUESTED', fetchProducts)"
+call fetch products on products requested action,"yield takeEvery('PRODUCTS_REQUESTED', fetchProducts)"
+generator function yielding api call to fetch products,"function* fetchProducts() {
+  const products = yield call(Api.fetch('/products'))
+  console.log(products)
+}"
+call api function,"const products = yield call(Api.fetch, '/products')"
+saga to call api function,"function* fetchProducts() {
+  const products = yield call(Api.fetch, '/products')
+}"
+read file saga,"import { cps } from 'redux-saga/effects'
+
+const content = yield cps(readFile, '/path/to/file')"
+call api saga,"function* fetchProducts() {
+  const products = yield call(Api.fetch, '/products')
+}"
+test read file saga,"import { cps } from 'redux-saga/effects'
+
+const iterator = fetchSaga()
+assert.deepEqual(iterator.next().value, cps(readFile, '/path/to/file') )"
+call api and dispatch action with results payload,"import { call, put } from 'redux-saga/effects'
+
+function* fetchProducts() {
+  const products = yield call(Api.fetch, '/products')
+  // create and yield a dispatch Effect
+  yield put({ type: 'PRODUCTS_RECEIVED', products })
+}"
+dispatch saga action with api response payload,"yield put({ type: 'PRODUCTS_RECEIVED', products })"
+test api call saga,"assert.deepEqual(
+  iterator.next().value,
+  call(Api.fetch, '/products'),
+  ""fetchProducts should yield an Effect call(Api.fetch, './products')""
+)"
+test saga dispatch,"assert.deepEqual(
+  iterator.next(products).value,
+  put({ type: 'PRODUCTS_RECEIVED', products }),
+  ""fetchProducts should yield an Effect put({ type: 'PRODUCTS_RECEIVED', products })""
+)"
+run only one task at a time,"import { takeLatest } from 'redux-saga/effects'
+
+function* watchFetchData() {
+  yield takeLatest('FETCH_REQUESTED', fetchData)
+}"
+run concurrent tasks,"import { takeEvery } from 'redux-saga/effects'
+
+function* watchFetchData() {
+  yield takeEvery('FETCH_REQUESTED', fetchData)
+}"
+run multiple parallel tasks,"import { takeEvery } from 'redux-saga/effects'
+
+// FETCH_USERS
+function* fetchUsers(action) { ... }
+
+// CREATE_USER
+function* createUser(action) { ... }
+
+// use them in parallel
+export default function* rootSaga() {
+  yield takeEvery('FETCH_USERS', fetchUsers)
+  yield takeEvery('CREATE_USER', createUser)
+}"
+"watch for FETCH USERS and call fetch users function, watch for CREATE USER and call create user function","export default function* rootSaga() {
+  yield takeEvery('FETCH_USERS', fetchUsers)
+  yield takeEvery('CREATE_USER', createUser)
+}"
+test error handling in fetch products dispatches products request failure,"assert.deepEqual(
+  iterator.throw(error).value,
+  put({ type: 'PRODUCTS_REQUEST_FAILED', error }),
+  ""fetchProducts should yield an Effect put({ type: 'PRODUCTS_REQUEST_FAILED', error })""
+)"
+call api and return error as part of dispatch payload,"import Api from './path/to/api'
+import { call, put } from 'redux-saga/effects'
+
+function fetchProductsApi() {
+  return Api.fetch('/products')
+    .then(response => ({ response }))
+    .catch(error => ({ error }))
+}
+
+function* fetchProducts() {
+  const { response, error } = yield call(fetchProductsApi)
+  if (response)
+    yield put({ type: 'PRODUCTS_RECEIVED', products: response })
+  else
+    yield put({ type: 'PRODUCTS_REQUEST_FAILED', error })
+}"
+call api function,"const { response, error } = yield call(fetchProductsApi)"
+"call api function, return response if ok","if (response)
+    yield put({ type: 'PRODUCTS_RECEIVED', products: response })"
+"call api function, return error in payload if there's an error","else
+    yield put({ type: 'PRODUCTS_REQUEST_FAILED', error })"
+"call api function, return response or error in payload","const { response, error } = yield call(fetchProductsApi)
+  if (response)
+    yield put({ type: 'PRODUCTS_RECEIVED', products: response })
+  else
+    yield put({ type: 'PRODUCTS_REQUEST_FAILED', error })"
+"call api function, return response or error in payload","function* fetchProducts() {
+  const { response, error } = yield call(fetchProductsApi)
+  if (response)
+    yield put({ type: 'PRODUCTS_RECEIVED', products: response })
+  else
+    yield put({ type: 'PRODUCTS_REQUEST_FAILED', error })
+}"
+start a subtask in parallel,"function* fetchPosts() {
+  yield put(actions.requestPosts())
+  const products = yield call(fetchApi, '/products')
+  yield put(actions.receivePosts(products))
+}
+
+function* watchFetch() {
+  while (yield take('FETCH_POSTS')) {
+    yield call(fetchPosts) // waits for the fetchPosts task to terminate
+  }
+}"
+nested saga handling multiple tasks,"function* mainSaga(getState) {
+  const results = yield all([call(task1), call(task2)])
+  yield put(showResults(results))
+}"
+create new channel for tasks,"import { take, actionChannel, call } from 'redux-saga/effects'
+
+function* watchRequests() {
+  // 1- Create a channel for request actions
+  const requestChan = yield actionChannel('REQUEST')
+  while (true) {
+    // 2- take from the channel
+    const {payload} = yield take(requestChan)
+    // 3- Note that we're using a blocking call
+    yield call(handleRequest, payload)
+  }
+}"
+handle five latest tasks in channel,"import { buffers } from 'redux-saga'
+import { actionChannel } from 'redux-saga/effects'
+
+function* watchRequests() {
+  const requestChan = yield actionChannel('REQUEST', buffers.sliding(5))
+}"
+create api request channel handling five tasks,"import { buffers } from 'redux-saga'
+import { actionChannel } from 'redux-saga/effects'
+
+function* watchRequests() {
+  const requestChan = yield actionChannel('API_REQUEST', buffers.sliding(5))
+}"
+create api request channel,"import { buffers } from 'redux-saga'
+import { actionChannel } from 'redux-saga/effects'
+
+function* watchRequests() {
+  const requestChan = yield actionChannel('API_REQUEST', buffers.sliding(5))
+}"
+create channel for websocket handling pings and errors with a pong message,"import { take, put, call, apply, delay } from 'redux-saga/effects'
+import { eventChannel } from 'redux-saga'
+import { createWebSocketConnection } from './socketConnection'
+
+// this function creates an event channel from a given socket
+// Setup subscription to incoming `ping` events
+function createSocketChannel(socket) {
+  // `eventChannel` takes a subscriber function
+  // the subscriber function takes an `emit` argument to put messages onto the channel
+  return eventChannel(emit => {
+
+    const pingHandler = (event) => {
+      // puts event payload into the channel
+      // this allows a Saga to take this payload from the returned channel
+      emit(event.payload)
+    }
+
+    const errorHandler = (errorEvent) => {
+      // create an Error object and put it into the channel
+      emit(new Error(errorEvent.reason))
+    }
+
+    // setup the subscription
+    socket.on('ping', pingHandler)
+    socket.on('error', errorHandler)
+
+    // the subscriber must return an unsubscribe function
+    // this will be invoked when the saga calls `channel.close` method
+    const unsubscribe = () => {
+      socket.off('ping', pingHandler)
+    }
+
+    return unsubscribe
+  })
+}
+
+// reply with a `pong` message by invoking `socket.emit('pong')`
+function* pong(socket) {
+  yield delay(5000)
+  yield apply(socket, socket.emit, ['pong']) // call `emit` as a method with `socket` as context
+}
+
+export function* watchOnPings() {
+  const socket = yield call(createWebSocketConnection)
+  const socketChannel = yield call(createSocketChannel, socket)
+
+  while (true) {
+    try {
+      // An error from socketChannel will cause the saga jump to the catch block
+      const payload = yield take(socketChannel)
+      yield put({ type: INCOMING_PONG_PAYLOAD, payload })
+      yield fork(pong, socket)
+    } catch(err) {
+      console.error('socket error:', err)
+      // socketChannel is still open in catch block
+      // if we want end the socketChannel, we need close it explicitly
+      // socketChannel.close()
+    }
+  }
+}"
