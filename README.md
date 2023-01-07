@@ -9,7 +9,12 @@ Dependencies:
 ## Dataset
 The dataset is in [`./dataset.csv`](./dataset.csv).
 
-To produce more completions for the dataset, there is a [`./parser.js`](./parser.js) that will parse TypeScript and JavaScript.
+To produce more completions for the dataset, you can use the parser which will parse TypeScript and JavaScript:
+
+```shell
+node index.js parse /path/to/typescript/file.ts
+node index.js parse /path/to/javascript/file.js
+```
 
 It will produce the following output that can be used to extend the dataset:
 
@@ -43,12 +48,14 @@ OPENAI_API_KEY="YOUR_OPENAI_API_KEY_GOES_HERE"
 ```shell
 # Upload the dataset and create the fine-tuned model
 node index.js
+# Alternative way to upload the dataset
+node index.js upload
 
 # List the status of the fine-tuning until the fine_tune_model field is no longer null
 node index.js list
 
 # Use the fine tune id as the model
-node index.js model-finetune-id prompt
+node index.js generate model-finetune-id prompt
 ```
 
 Example session:

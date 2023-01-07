@@ -2,6 +2,8 @@ require("dotenv").config();
 const fs = require("fs");
 const { parse: csvParseSync} = require("csv-parse/sync");
 const { Configuration, OpenAIApi } = require("openai");
+const yargs = require("yargs/yargs");
+const { hideBin } = require("yargs/helpers");
 
 const configuration = new Configuration({
   apiKey: process.env.OPENAI_API_KEY,
@@ -61,17 +63,42 @@ async function generateCode(model, prompt) {
   return openai.createCompletion({ model, prompt });
 }
 
-if (process.argv.length == 2) {
-  convertCsvToJsonl(CSV_DATASET_PATH, JSONL_DATASET_PATH);
-  uploadDatasetAndFineTuneModel().then((fineTuneId) => {
-    console.log(`Fine tune id: ${fineTuneId}`);
-  });
-} else if (process.argv.length == 3 && process.argv[2] == "list") {
-  listFineTunes();
-} else {
-  const model = process.argv[2];
-  const prompt = process.argv[3];
-  generateCode(model, prompt).then((completion) => {
-    console.log(completion.data.choices[0].text);
-  });
-}
+yargs(hideBin(process.argv))
+  .command(
+    "list",
+    "list the fine tunes and their status",
+    {},
+    () => {
+      listFineTunes();
+    }
+  )
+  .command(
+    "generate <model> <prompt>",
+    "Generates code using the fine-tuned model given a prompt",
+    {},
+    (argv) => {
+      generateCode(argv.model, argv.prompt).then((completion) => {
+        console.log(completion.data.choices[0].text);
+      });
+    }
+  )
+  .command(
+    ["upload", "$0"],
+    "upload the dataset after converting it to JSONL from CSV and create a fine tuned model",
+    {},
+    () => {
+      convertCsvToJsonl(CSV_DATASET_PATH, JSONL_DATASET_PATH);
+      uploadDatasetAndFineTuneModel().then((fineTuneId) => {
+        console.log(`Fine tune id: ${fineTuneId}`);
+      });
+    }
+  )
+  .command(
+    "parse <sourceCodeFilePath>",
+    "Parses a JavaScript or TypeScript file into a CSV that can be added to the dataset.csv file",
+    {},
+    (argv) => {
+      argv.sourceCodeFilePath;
+    }
+  )
+  .parse();
