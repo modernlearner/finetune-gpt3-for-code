@@ -1,5 +1,6 @@
 require("dotenv").config();
 const fs = require("fs");
+const path = require("path");
 const { parse: csvParseSync} = require("csv-parse/sync");
 const { Configuration, OpenAIApi } = require("openai");
 const typescript = require("typescript");
@@ -128,10 +129,18 @@ yargs(hideBin(process.argv))
   )
   .command(
     "parse <sourceCodeFilePath>",
-    "Parses a JavaScript or TypeScript file into a CSV that can be added to the dataset.csv file",
+    "Parses a JavaScript or TypeScript file or directory into a CSV that can be added to the dataset.csv file",
     {},
     (argv) => {
-      parseSourcecode(argv.sourceCodeFilePath)
+      if (fs.lstatSync(argv.sourceCodeFilePath).isDirectory()) {
+        for (const file of fs.readdirSync(argv.sourceCodeFilePath)) { 
+          if (path.extname(file) === ".js" || path.extname(file) === ".ts") {
+            parseSourcecode(path.join(argv.sourceCodeFilePath, file));
+          }
+        }
+      } else {
+        parseSourcecode(argv.sourceCodeFilePath);
+      }
     }
   )
   .parse();

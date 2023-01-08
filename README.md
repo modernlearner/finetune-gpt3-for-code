@@ -12,11 +12,15 @@ The dataset is in [`./dataset.csv`](./dataset.csv).
 To produce more completions for the dataset, you can use the parser which will parse TypeScript and JavaScript:
 
 ```shell
-node index.js parse /path/to/typescript/file.ts
-node index.js parse /path/to/javascript/file.js
+# Parsing a directory of source code files
+node index.js parse ./input
 
 # Parsing the source code of finetune-gpt3-for-code
 node index.js parse ./index.js
+
+# Parsing individual source code files
+node index.js parse /path/to/typescript/file.ts
+node index.js parse /path/to/javascript/file.js
 ```
 
 It will produce the following output that can be used to extend the dataset:
