@@ -3,3 +3,6 @@ node_modules/
 .env.*
 *.jsonl
 .DS_Store
+input/
+output/*.csv
+output/*.jsonl
