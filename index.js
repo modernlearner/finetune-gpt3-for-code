@@ -1,4 +1,7 @@
-require("dotenv").config();
+if (process.env.DOCKER_RUNNING) {
+  require("dotenv").config();
+}
+
 const fs = require("fs");
 const path = require("path");
 const { parse: csvParseSync} = require("csv-parse/sync");
@@ -13,8 +16,10 @@ const configuration = new Configuration({
 
 const openai = new OpenAIApi(configuration);
 
-const CSV_DATASET_PATH = "dataset.csv";
-const JSONL_DATASET_PATH = "dataset.jsonl";
+const CSV_DATASET_PATH = process.env.DOCKER_RUNNING ? "/data/dataset.csv" : "data/dataset.csv";
+const JSONL_DATASET_PATH = process.env.DOCKER_RUNNING ? "/data/dataset.jsonl" : "data/dataset.jsonl";
+
+const debug = process.env.DEBUG.includes("true") ? (message) => console.log(message) : () => {};
 
 function convertCsvToJsonl(csvFilePath, jsonlFilePath) {
   const csvData = fs.readFileSync(csvFilePath, "utf8");
@@ -55,10 +60,15 @@ async function listFineTunes() {
   }
 }
 
+/**
+ * Stores a CSV file of the parsed source code in the `output/` directory.
+ * @param {*} sourceCodeFilePath 
+ */
 function parseSourcecode(sourceCodeFilePath) {
   const program = typescript.createProgram([sourceCodeFilePath], { allowJs: true});
   const printer = typescript.createPrinter({ newLine: typescript.NewLineKind.LineFeed });
   const sourceFile = program.getSourceFile(sourceCodeFilePath);
+  debug(`Parsing ${sourceCodeFilePath}...`);
   parseNode(sourceFile);
   function parseNode(node) {
     const completion = printer.printNode(typescript.EmitHint.Unspecified, node, sourceFile);
@@ -80,6 +90,7 @@ function parseSourcecode(sourceCodeFilePath) {
     }
 
     for (const prompt of prompts) {
+      // TODO: save this to a CSV file
       console.log(`"${prompt}","${completion}"\n`);
     }
 
@@ -97,12 +108,14 @@ async function generateCode(model, prompt) {
   return openai.createCompletion({ model, prompt });
 }
 
+debug("Fine Tuning GPT-3");
 yargs(hideBin(process.argv))
   .command(
     "list",
     "list the fine tunes and their status",
     {},
     () => {
+      debug("Listing fine tunes");
       listFineTunes();
     }
   )
@@ -111,6 +124,7 @@ yargs(hideBin(process.argv))
     "Generates code using the fine-tuned model given a prompt",
     {},
     (argv) => {
+      debug("Generating code");
       generateCode(argv.model, argv.prompt).then((completion) => {
         console.log(completion.data.choices[0].text);
       });
@@ -121,6 +135,7 @@ yargs(hideBin(process.argv))
     "upload the dataset after converting it to JSONL from CSV and create a fine tuned model",
     {},
     () => {
+      debug("Uploading dataset and fine tuning model");
       convertCsvToJsonl(CSV_DATASET_PATH, JSONL_DATASET_PATH);
       uploadDatasetAndFineTuneModel().then((fineTuneId) => {
         console.log(`Fine tune id: ${fineTuneId}`);
@@ -133,12 +148,16 @@ yargs(hideBin(process.argv))
     {},
     (argv) => {
       if (fs.lstatSync(argv.sourceCodeFilePath).isDirectory()) {
+        debug("Parsing source code in directory: " + argv.sourceCodeFilePath);
         for (const file of fs.readdirSync(argv.sourceCodeFilePath)) { 
+          debug("Checking whether to parse file: " + file);
           if (path.extname(file) === ".js" || path.extname(file) === ".ts") {
+            debug("Parsing source code file: " + file);
             parseSourcecode(path.join(argv.sourceCodeFilePath, file));
           }
         }
       } else {
+        debug("Parsing source code file: " + argv.sourceCodeFilePath);
         parseSourcecode(argv.sourceCodeFilePath);
       }
     }

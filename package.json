@@ -4,7 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "docker:build": "docker build -t finetune-gpt3-for-code .",
+    "docker:run": "docker run -it --rm --log-driver none --env-file .env -v $(pwd)/data:/data finetune-gpt3-for-code"
   },
   "author": "Rudolf Olah <rudolf.olah.to@gmail.com>",
   "license": "MIT",

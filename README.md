@@ -44,10 +44,11 @@ function for printHelloWorld with one argument,"function printHelloWorld(name) {
 npm install
 ```
 
-You can store the api key in a `.env` file:
+You can store the api key in a `.env` file and control debug logging with the `DEBUG` environment variable.
 
 ```
 OPENAI_API_KEY="YOUR_OPENAI_API_KEY_GOES_HERE"
+DEBUG="true"
 ```
 
 ## Running the Code
@@ -101,4 +102,14 @@ import { cps } from 'redux
 $ node index.js davinci:ft-personal-2023-01-07-07-00-01 "test api call saga"
 assert.deepEqual(
   iterator.next(assert.isNot
+```
+
+## Running the code using Docker
+
+```shell
+# npm run-script docker:build
+docker build -t finetune-gpt3-for-code .
+
+# npm run-script docker:run
+docker run -it --rm --log-driver none --env-file .env -v $(pwd)/data:/data finetune-gpt3-for-code
 ```
