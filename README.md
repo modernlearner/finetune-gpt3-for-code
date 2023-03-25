@@ -6,7 +6,20 @@ Dependencies:
 * [TypeScript for Compiler API](https://github.com/microsoft/TypeScript/wiki/Using-the-Compiler-API)
 * [dotenv for loading environment variables](https://github.com/motdotla/dotenv)
 
-## Dataset
+## Install and Setup
+
+```shell
+npm install
+```
+
+You can store the api key in a `.env` file and control debug logging with the `DEBUG` environment variable.
+
+```
+OPENAI_API_KEY="YOUR_OPENAI_API_KEY_GOES_HERE"
+DEBUG="true"
+```
+
+### Dataset and TypeScript/JavaScript Code Parser
 The dataset is in [`./dataset.csv`](./dataset.csv).
 
 To produce more completions for the dataset, you can use the parser which will parse TypeScript and JavaScript:
@@ -36,19 +49,6 @@ function for printHelloWorld with one argument,"function printHelloWorld(name) {
 function for printHelloWorld with one argument,"function printHelloWorld(name) {
   console.log(`Hello ${name}`);
 }"
-```
-
-## Install and Setup
-
-```shell
-npm install
-```
-
-You can store the api key in a `.env` file and control debug logging with the `DEBUG` environment variable.
-
-```
-OPENAI_API_KEY="YOUR_OPENAI_API_KEY_GOES_HERE"
-DEBUG="true"
 ```
 
 ## Running the Code
