@@ -53,20 +53,35 @@ DEBUG="true"
 
 ## Running the Code
 
+Upload the dataset and create the fine-tuned model:
+
 ```shell
-# Upload the dataset and create the fine-tuned model
 node index.js
-# Alternative way to upload the dataset
+```
+
+Alternative way to upload the dataset:
+
+```shell
 node index.js upload
+```
 
-# List the status of the fine-tuning until the fine_tune_model field is no longer null
+### Listing the status of the fine-tuned models
+
+List the status of the fine-tuning until the `fine_tune_model` field is no longer null
+
+```shell
 node index.js list
+```
 
-# Use the fine tune id as the model
+### Creating a completion
+
+Use the fine tune id as the model when it is ready
+
+```shell
 node index.js generate model-finetune-id prompt
 ```
 
-Example session:
+### Example Session
 
 ```
 $ node index.js
