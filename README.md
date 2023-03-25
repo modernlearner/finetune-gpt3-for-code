@@ -91,14 +91,14 @@ $ node index.js list
 ft-nlBqfegq5AP1QkfLKOCvuz6u succeeded curie:ft-personal-2023-01-07-06-54-13
 ft-l8B3FiHivRuMWxj8U1YvQKq2 running null
 
-$ node index.js curie:ft-personal-2023-01-07-06-54-13 "define apply effect"
+$ node index.js generate curie:ft-personal-2023-01-07-06-54-13 "define apply effect"
 const yEff = (value) => ({ done: false, value })
 
-$ node index.js curie:ft-personal-2023-01-07-06-54-13 "test api call saga"
+$ node index.js generate curie:ft-personal-2023-01-07-06-54-13 "test api call saga"
 function* fetchProducts() {
   const products = yield call(Api
 
-$ node index.js curie:ft-personal-2023-01-07-06-54-13 "test api call saga"
+$ node index.js generate curie:ft-personal-2023-01-07-06-54-13 "test api call saga"
 assert.deeplyEqual(
   iterator.next().value,
 
@@ -106,15 +106,15 @@ $ node index.js list
 ft-nlBqfegq5AP1QkfLKOCvuz6u succeeded curie:ft-personal-2023-01-07-06-54-13
 ft-l8B3FiHivRuMWxj8U1YvQKq2 succeeded davinci:ft-personal-2023-01-07-07-00-01
 
-$ node index.js davinci:ft-personal-2023-01-07-07-00-01 "define apply effect"
+$ node index.js generate davinci:ft-personal-2023-01-07-07-00-01 "define apply effect"
 const arrayOfValues = { value: 5 }
   const expectedEffect =
 
-$ node index.js davinci:ft-personal-2023-01-07-07-00-01 "test api call saga"
+$ node index.js generate davinci:ft-personal-2023-01-07-07-00-01 "test api call saga"
 assert.deepEqual(
 import { cps } from 'redux
 
-$ node index.js davinci:ft-personal-2023-01-07-07-00-01 "test api call saga"
+$ node index.js generate davinci:ft-personal-2023-01-07-07-00-01 "test api call saga"
 assert.deepEqual(
   iterator.next(assert.isNot
 ```
